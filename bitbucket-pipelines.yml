@@ -1,0 +1,170 @@
+image:
+  name: docker.levelaccess.net/docker-public/java-node-builds:34194ac
+  username: "${REPOSITORY_USERNAME}"
+  password: "${REPOSITORY_PASSWORD}"
+
+definitions:
+  steps:
+  - step: &java-build
+      name: Java build
+      caches:
+        - maven
+        - node
+      script:
+        - nvm install
+        - java -version
+        - mvn --version
+        - node --version
+        - npm --version
+        - mvn clean -Dbootstrap
+        - mvn compile
+        - mkdir -p build/java/{community,professional}
+        - cp -R versions/community/target/ build/java/community/
+        - cp -R versions/professional/target/ build/java/professional/
+      artifacts:
+        - build/java/**
+  - step: &java-test
+      size: 2x
+      name: Java test
+      caches:
+        - maven
+        - node
+      script:
+        - nvm install
+        - java -version
+        - mvn --version
+        - node --version
+        - npm --version
+        - mvn clean -Dbootstrap
+        - mkdir -p versions/{community,professional}/target
+        - cp -R build/java/community/target/* versions/community/target/
+        - cp -R build/java/professional/target/* versions/professional/target/
+        - mvn test -Dkarma
+  - step: &java-test-saucelabs
+      name: Java test Saucelabs
+      caches:
+        - maven
+        - node
+      script:
+        - nvm install
+        - java -version
+        - mvn --version
+        - node --version
+        - npm --version
+        - mvn clean -Dbootstrap
+        - mkdir -p versions/{community,professional}/target
+        - cp -R build/java/community/target/* versions/community/target/
+        - cp -R build/java/professional/target/* versions/professional/target/
+        - mvn test -Dkarma
+        - mvn test -Dkarma-saucelabs
+  - step: &java-deploy
+      name: Java deploy
+      caches:
+        - maven
+        - node
+      script:
+        - nvm install
+        - java -version
+        - mvn --version
+        - node --version
+        - npm --version
+        - mvn clean -Dbootstrap
+        - mkdir -p versions/{community,professional}/target
+        - cp -R build/java/community/target/* versions/community/target/
+        - cp -R build/java/professional/target/* versions/professional/target/
+        - mvn deploy
+  - step: &node-build
+      name: Node build
+      caches:
+        - node
+      script:
+        - nvm install
+        - node --version
+        - npm --version
+        - npm install
+        - npm run build
+        - mkdir -p build/node/{community,professional}
+        - cp -R versions/community/target/ build/node/community/
+        - cp -R versions/professional/target/ build/node/professional/
+      artifacts:
+        - build/node/**
+  - step: &node-test
+      size: 2x
+      name: Node test
+      caches:
+        - node
+      script:
+        - nvm install
+        - node --version
+        - npm --version
+        - mkdir -p versions/{community,professional}/target
+        - cp -R build/node/community/target/* versions/community/target/
+        - cp -R build/node/professional/target/* versions/professional/target/
+        - npm run test
+  - step: &node-test-saucelabs
+      name: Node test Saucelabs
+      caches:
+        - node
+      script:
+        - nvm install
+        - node --version
+        - npm --version
+        - mkdir -p versions/{community,professional}/target
+        - cp -R build/node/community/target/* versions/community/target/
+        - cp -R build/node/professional/target/* versions/professional/target/
+        - npm run test
+        - npm run test:saucelabs
+  - step: &node-publish
+      name: Node publish
+      caches:
+        - node
+      script:
+        - cp ./infrastructure/.npmrc ~/.npmrc
+        - nvm install
+        - node --version
+        - npm --version
+        - VERSION=$(jq -r '.version' package.json)
+        - PREID=$(awk '{split($0,a,"-"); split(a[2],b,"."); print b[1]}' <<< "${VERSION}")
+        - | 
+          if [[ -n "${PREID}" ]]; then
+            PREID="${PREID}.$(date +%s)"
+            echo "Versioning [${VERSION}] with PREID [${PREID}]"
+            npm --no-git-tag-version version prerelease --preid="${PREID}"
+          fi
+        - cp build/node/professional/target/AccessEngine.professional.js ./
+        - npm publish
+        - cp package.json.bak package.json
+
+pipelines:
+  pull-requests:
+    '**':
+      - parallel:
+        - step: *java-build
+        - step: *node-build
+      - parallel:
+        - step: *java-test
+        - step: *node-test
+  branches:
+    '{develop,release/*,master}':
+      - parallel:
+        - step: *java-build
+        - step: *node-build
+      - parallel:
+        - step: *java-test
+        - step: *node-test
+      - parallel:
+        - step: *java-deploy
+        - step: *node-publish
+  custom:
+    saucelabs:
+      - parallel:
+        - step: *java-build
+        - step: *node-build
+      - step: *java-test-saucelabs
+      - step: *node-test-saucelabs
+    saucelabs-java:
+      - step: *java-build
+      - step: *java-test-saucelabs
+    saucelabs-node:
+      - step: *node-build
+      - step: *node-test-saucelabs

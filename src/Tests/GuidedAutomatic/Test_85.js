@@ -1,0 +1,56 @@
+import {aeKernel} from "../../Kernel/AEKernel.js";
+import {AutoTestShell} from "../../Models/AutoTestShell.js";
+import {isValidIdOrName} from "../../Utils/aeUtils.js";
+import { mediaTypes } from "../../Utils/aeUtils.js";
+/**
+ * Jira: https://levelaccess.atlassian.net/browse/ENG-85
+ * Template Test: 95
+ * @returns {AutoTestShell} testShell
+ */
+export function test85() {
+	aeKernel.addGuidedAutomaticTest("85", {
+		bestPractice:1626,
+		testId:85,
+		introduced: "0.9",
+		mediaType: mediaTypes.WEB,
+		description:"One or more elements, excluding elements with a role='combobox' attribute, not intentionally hidden in the DOM and available to assistive technologies, has an aria-controls attribute value that includes one or more invalid ids.",
+		metaText: "This element has an aria-controls attribute value that includes one or more invalid ids",
+		metaTextDetail: "This {{tag-name}} has an aria-controls attribute value of '{{aria-controls}}', which includes one or more invalid ids",
+		fixType: "",
+		testFunc: function() {
+			var testShell = new AutoTestShell(
+				'*[data-ae_vis][data-ae_avat][aria-controls]:not([aria-controls=""]):not([data-ae_ar="combobox"])'
+			);
+			
+			testShell.set_candidateSetNodesFunc(function() {
+				var nodesWithBadIds = [];
+				var res = aeKernel.rootTestNode.querySelectorAll('*[data-ae_vis][data-ae_avat][aria-controls]:not([aria-controls=""])');
+				
+				for (var i = 0, len_res = res.length; i < len_res; i++) {
+					var n = res[i];
+					var labelledByIds = n.getAttribute("aria-controls").trim().split(/\s+/);
+					for (var j = 0, len_labelledByIds = labelledByIds.length; j < len_labelledByIds; j++) {
+						var labelledById = labelledByIds[j];
+						if (isValidIdOrName(labelledById) === true) {
+							// "[id=" is used in place of "#" + id as ids can included colons which breaks css selector, although is valid html
+							var refNode = aeKernel.rootTestNode.querySelectorAll("[id='" + labelledById.replace(/'/g, "\\'") + "']");
+							var refNodeLength = refNode.length;
+							if (refNodeLength === 0) {
+								nodesWithBadIds.push(n);
+								break;
+							}
+						}
+						else {
+							nodesWithBadIds.push(n);
+							break;
+						}
+					}
+				}
+				
+				return nodesWithBadIds;
+			});
+			
+			return testShell;
+		}
+	});
+}

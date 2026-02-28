@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>access-engine</artifactId>
+		<groupId>level-access</groupId>
+		<version>2.29.0-SNAPSHOT</version>
+		<relativePath>../../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>access-engine-community</artifactId>
+	<packaging>war</packaging>
+
+	<properties>
+		<parent_path>${basedir}/../..</parent_path>
+		<node_path>${basedir}/../../node_modules</node_path>				
+		<rollupBinary>${node_path}/rollup/dist/bin/rollup</rollupBinary>
+		<gruntBinary>${node_path}/grunt-cli/bin/grunt</gruntBinary>
+		<karmaBinary>${node_path}/karma/bin/karma</karmaBinary>
+		<babelBinary>${node_path}/@babel/cli/bin/babel.js</babelBinary>
+	</properties>
+
+	<profiles>
+		<profile>
+			<id>compile</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<executions>
+							<!-- Rollupjs -->
+							<!-- ********************************************************************** -->
+							<execution>
+								<id>rollup</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>${rollupBinary}</executable>
+									<arguments>
+										<argument>src/AccessEngine.community.js</argument>
+										<argument>--o</argument>
+										<argument>target/Unminified/AccessEngine.community.rollup</argument>
+										<argument>--output.format</argument>
+										<argument>iife</argument>
+										<argument>--name</argument>
+										<argument>LevelAccess_AccessEngine</argument>
+										<argument>--plugin</argument>
+										<argument>@rollup/plugin-node-resolve</argument>
+										<argument>--plugin</argument>
+										<argument>@rollup/plugin-commonjs</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							
+							<!-- Babeljs -->
+							<!-- ********************************************************************** -->
+							<execution>
+								<id>babel</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>babel</executable>
+									<executable>${babelBinary}</executable>
+									<arguments>
+										<argument>--env-name</argument>
+										<argument>community</argument>
+										<argument>target/Unminified/AccessEngine.community.rollup</argument>
+										<argument>--out-file</argument>
+										<argument>target/Unminified/AccessEngine.community.js</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							
+							<!-- Minify via Grunt-->
+							<!-- ********************************************************************** -->
+							<execution>
+								<id>grunt</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>${gruntBinary}</executable>
+									<arguments>
+										<argument>community</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					
+					<plugin>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>compile</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<replace token="antProjectVersion" value="${project.version}" dir="${project.build.outputDirectory}/..">
+											<include name="**/AccessEngine.community.js"/>
+										</replace>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-war-plugin</artifactId>
+						<executions>
+							<!-- Package WAR for distribution -->
+							<execution>
+								<id>default-war</id>
+								<configuration>
+									<webResources>
+										<resource>
+											<directory>${project.build.directory}</directory>
+											<filtering>true</filtering>
+											<includes>
+												<include>Unminified/AccessEngine.community.js</include>
+												<include>AccessEngine.community.js</include>
+											</includes>
+										</resource>
+									</webResources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>karma</id>
+
+			<activation>
+				<property>
+					<name>karma</name>
+				</property>
+			</activation>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<!-- Run Karma tests natively -->
+								<!-- ********************************************************************** -->
+								<id>karma-native</id>
+								<phase>test</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>${karmaBinary}</executable>
+									<arguments>
+										<argument>start</argument>
+										<argument>${basedir}/tests/karma_maven_community.conf.js</argument>
+										<argument>--single-run</argument>
+										<argument>--reporters</argument>
+										<argument>progress</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

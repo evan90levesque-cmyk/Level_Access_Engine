@@ -1,0 +1,47 @@
+{
+	"env": {
+		"professional": {
+			"plugins": [
+				["minify-replace", {
+					"replacements": [{
+						"identifierName": "__ACCESS_ENGINE_TYPE__",
+						"replacement": {
+							"type": "stringLiteral",
+							"value": "professional"
+						}
+					}]
+				}]
+			]
+		},
+		"community": {
+			"plugins": [
+				["minify-replace", {
+					"replacements": [{
+						"identifierName": "__ACCESS_ENGINE_TYPE__",
+						"replacement": {
+							"type": "stringLiteral",
+							"value": "community"
+						}
+					}]
+				}]
+			]
+		}
+	},
+	"presets": [
+		[
+			"@babel/preset-env",
+			{
+				"targets": {
+					"browsers": [
+						"last 1 chrome version",
+						"last 1 firefox version",
+						"last 1 edge version",
+						"last 1 safari version",
+						"firefox >= 68"
+					]
+				}
+			}
+		]
+	],
+	"compact":true
+}

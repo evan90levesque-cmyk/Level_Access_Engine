@@ -1,0 +1,25 @@
+version: 0.2
+
+env:
+  git-credential-helper: yes
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto8
+      nodejs: 12
+    commands:
+    - echo "Install skipped"
+  pre_build:
+    commands:
+    - echo "Prebuild skipped"
+  build:
+    commands:
+    - echo "Builds have moved to Bitbucket pipelines"
+    - exit 1
+
+cache:
+  paths:
+  - '/root/.m2/repository/**/*'
+  - '/root/.npm/**/*'
+  - './node_modules/**/*'

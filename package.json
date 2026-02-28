@@ -1,0 +1,64 @@
+{
+	"name": "@level-access/access-engine",
+	"version": "2.29.0-alpha.0",
+	"engines": {
+		"npm": ">=10.0.0",
+		"node": ">=20.0.0"
+	},
+	"scripts": {
+		"prebuild": "npm install",
+		"build": "npm run community:build && npm run professional:build",
+		"postbuild": "grunt community && grunt professional",
+		"clean": "rm -rf versions/**/target && rm -rf target/",
+		"test": "npm run community:test && npm run professional:test",
+		"test:saucelabs": "npm run professional:test-saucelabs",
+		"community:babel": "babel --env-name community versions/community/target/Unminified/AccessEngine.community.rollup --out-file versions/community/target/Unminified/AccessEngine.community.js",
+		"community:build": "npm run community:rollup && npm run community:babel",
+		"community:rollup": "rollup versions/community/src/AccessEngine.community.js --o versions/community/target/Unminified/AccessEngine.community.rollup --output.format iife --name LevelAccess_AccessEngine --plugin @rollup/plugin-node-resolve --plugin @rollup/plugin-commonjs",
+		"community:test": "node_modules/karma/bin/karma start versions/community/tests/karma_maven_community.conf.js --single-run --reporters progress",
+		"professional:babel": "babel --env-name professional versions/professional/target/Unminified/AccessEngine.professional.rollup --out-file versions/professional/target/Unminified/AccessEngine.professional.js",
+		"professional:build": "npm run professional:rollup && npm run professional:babel",
+		"professional:rollup": "rollup versions/professional/src/AccessEngine.professional.js --o versions/professional/target/Unminified/AccessEngine.professional.rollup --output.format iife --name LevelAccess_AccessEngine --plugin @rollup/plugin-node-resolve --plugin @rollup/plugin-commonjs",
+		"professional:test": "node_modules/karma/bin/karma start versions/professional/tests/karma_maven_professional.conf.js --single-run --reporters progress",
+		"professional:test-saucelabs": "node_modules/karma/bin/karma start versions/professional/tests/karma_maven_professional.conf.js --sauceLabs",
+		"prepublishOnly": "cp package.json package.json.bak && npm pkg delete scripts"
+	},
+	"publishConfig": {
+		"registry": "https://npm.levelaccess.net/internal/"
+	},
+	"files": [
+		"AccessEngine.professional.js"
+	],
+	"dependencies": {
+		"crypto-js": "^4.1.1"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.14.5",
+		"@babel/core": "^7.14.6",
+		"@babel/preset-env": "^7.14.7",
+		"@rollup/plugin-commonjs": "^21.1.0",
+		"@rollup/plugin-node-resolve": "^13.0.0",
+		"babel-plugin-minify-replace": "^0.5.0",
+		"google-closure-compiler": "^20210601.0.0",
+		"grunt": "^1.4.1",
+		"grunt-banner": "^0.6.0",
+		"grunt-cli": "^1.4.3",
+		"grunt-contrib-clean": "^2.0.0",
+		"grunt-text-replace": "0.4.0",
+		"is-docker": "^2.2.1",
+		"jasmine": "^3.8.0",
+		"jasmine-core": "^3.8.0",
+		"karma": "^6.3.4",
+		"karma-chrome-launcher": "^3.1.0",
+		"karma-firefox-launcher": "^2.1.1",
+		"karma-jasmine": "^4.0.1",
+		"karma-junit-reporter": "^2.0.1",
+		"karma-sauce-launcher": "^4.3.6",
+		"rollup": "^2.52.7"
+	},
+	"overrides": {
+		"karma-sauce-launcher": {
+			"webdriverio": "^8.20.3"
+		}
+	}
+}
